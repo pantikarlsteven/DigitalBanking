@@ -1,9 +1,7 @@
 ﻿using DigitalBanking.Api.Common;
 using DigitalBanking.Application.DTOs;
 using DigitalBanking.Application.Interfaces;
-using DigitalBanking.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DigitalBanking.Api.Controllers
 {
@@ -22,19 +20,19 @@ namespace DigitalBanking.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse>> GetCustomer(Guid id)
         {
-            var customer = await _repository.FindAsync(id);
+            var result = await _repository.FindAsync(id);
 
-            if (customer == null)
+            if (!result.Success)
             {
-                return NotFound(ApiResponse.FailResult($"Customer with ID {id} not found"));
+                return BadRequest(ApiResponse.FailResult(result.Message ?? "Customer not found"));
             }
 
-            return Ok(ApiResponse.SuccessResult(customer, "Customer retrieved successfully"));
+            return Ok(ApiResponse.SuccessResult(result.Data, result.Message));
         }
 
         // PUT: api/Customers/{id}
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> PutCustomer(Guid id, CustomerDTO customer)
+        public async Task<ActionResult<ApiResponse>> PutCustomer(Guid id, UpdateCustomerInfo customer)
         {
             if (id != customer.Id)
             {
@@ -43,23 +41,26 @@ namespace DigitalBanking.Api.Controllers
 
             var result = await _repository.PutAsync(id, customer);
 
-            if (!result)
+            if (!result.Success)
             {
-                return NotFound(ApiResponse.FailResult($"Customer with ID {id} not found"));
+                return NotFound(ApiResponse.FailResult(result.Message ?? "Customer not found"));
             }
 
-            return Ok(ApiResponse.SuccessResult(null, "Customer updated successfully"));
+            return Ok(ApiResponse.SuccessResult(null, result.Message));
         }
 
         // POST: api/Customers
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> PostCustomer(CustomerDTO customer)
+        public async Task<ActionResult<ApiResponse>> PostCustomer(AddCustomerDTO customer)
         {
-            await _repository.AddAsync(customer);
+            var result = await _repository.AddAsync(customer);
 
-            var response = ApiResponse.SuccessResult(customer, "Customer created successfully");
+            if (!result.Success)
+                return ApiResponse.FailResult(result.Message ?? "Create Failed");
 
-            return CreatedAtAction("GetCustomer", new { id = customer.Id }, response);
+            return CreatedAtAction("GetCustomer", new { id = result.Data },
+                   ApiResponse.SuccessResult(customer, result.Message ?? "Create successful"));
+
         }
     }
 }

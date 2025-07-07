@@ -99,15 +99,6 @@ namespace DigitalBanking.Infrastructure.Data
                 entity.Property(e => e.Timestamp)
                     .HasDefaultValueSql("SYSDATETIME()");
 
-                entity.HasOne(e => e.FromAccount)
-                    .WithMany()
-                    .HasForeignKey(e => e.FromAccountId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(e => e.ToAccount)
-                    .WithMany()
-                    .HasForeignKey(e => e.ToAccountId)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
 
         }

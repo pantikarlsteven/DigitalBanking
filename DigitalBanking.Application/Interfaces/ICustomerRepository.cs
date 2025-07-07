@@ -1,4 +1,5 @@
-﻿using DigitalBanking.Application.DTOs;
+﻿using DigitalBanking.Application.Common;
+using DigitalBanking.Application.DTOs;
 using DigitalBanking.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,8 @@ namespace DigitalBanking.Application.Interfaces
 {
     public interface ICustomerRepository
     {
-        Task<CustomerDTO?> FindAsync(Guid id);
-        Task AddAsync(CustomerDTO customer);
-        Task<bool> PutAsync(Guid id, CustomerDTO customer);
+        Task<ServiceResult<CustomerDTO>> FindAsync(Guid id);
+        Task<ServiceResult<Guid>> AddAsync(AddCustomerDTO customer);
+        Task<ServiceResult<bool>> PutAsync(Guid id, UpdateCustomerInfo customer);
     }
 }

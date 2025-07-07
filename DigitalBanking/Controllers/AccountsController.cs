@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DigitalBanking.Domain.Entities;
-using DigitalBanking.Application.Interfaces;
+﻿using DigitalBanking.Api.Common;
 using DigitalBanking.Application.DTOs;
+using DigitalBanking.Application.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DigitalBanking.Api.Controllers
 {
@@ -16,52 +15,66 @@ namespace DigitalBanking.Api.Controllers
             _repository = repository;
         }
 
-        [HttpGet("{id}/getaccount")]
-        public async Task<ActionResult<Account>> GetAccount(Guid id)
-        {
-            var account = await _repository.FindAsync(id);
-
-            if (account == null)
-            {
-                return NotFound();
-            }
-
-            return account;
-        }
-
         // GET: api/Accounts/{accountNumber}
         [HttpGet("{accountNumber}")]
-        public async Task<ActionResult<Account>> GetAccountTransaction(string accountNumber)
+        public async Task<ActionResult<ApiResponse>> GetAccountTransaction(string accountNumber)
         {
-            var account = await _repository.GetAccountTransactionAsync(accountNumber);
+            var result = await _repository.GetAccountTransactionAsync(accountNumber);
 
-            if (account == null)
-            {
-                return NotFound();
-            }
+            if (!result.Success)
+                return BadRequest(ApiResponse.FailResult(result.Message ?? "Account not found"));
 
-            return account;
+            return Ok(ApiResponse.SuccessResult(result.Data, result.Message));
         }
 
         [HttpGet("{accountNumber}/balance")]
-        public async Task<ActionResult<decimal>> GetAccountBalance(string accountNumber)
+        public async Task<ActionResult<ApiResponse>> GetAccountBalance(string accountNumber)
         {
-            return await _repository.GetAccountBalanceAsync(accountNumber);
+            var result = await _repository.GetAccountBalanceAsync(accountNumber);
+
+            if (!result.Success)
+                return BadRequest(ApiResponse.FailResult(result.Message ?? "Account not found"));
+
+            return Ok(ApiResponse.SuccessResult(result.Data, result.Message));
         }
 
         // PUT: api/Accounts/{accountNumber}/status
         [HttpPut("{accountNumber}/status")]
-        public async Task<ActionResult<bool>> ActivateDeactivateAccount(string accountNumber)
+        public async Task<ActionResult<ApiResponse>> UpdateAccountStatus(string accountNumber)
         {
-            return await _repository.ActivateDeactivateAccountAsync(accountNumber);
+            var result = await _repository.UpdateAccountStatusAsync(accountNumber);
+
+            if (!result.Success)
+                return BadRequest(ApiResponse.FailResult(result.Message ?? "Account not found"));
+
+            return Ok(ApiResponse.SuccessResult(result.Data, result.Message));
         }
 
-        //// POST: api/Accounts
+        // POST: api/Accounts
         [HttpPost]
-        public async Task<ActionResult> PostAccount(AccountDTO account)
+        public async Task<ActionResult<ApiResponse>> PostAccount(AddAccountDTO account)
         {
-            var id = await _repository.AddAsync(account);
-            return CreatedAtAction("GetAccount", new { id }, account);
+            try
+            {
+                var result = await _repository.AddAccountAsync(account);
+
+                if (!result.Success)
+                {
+                    return BadRequest(ApiResponse.FailResult(result.Message ?? "Create Account failed"));
+                }
+
+                return Ok(ApiResponse.SuccessResult(result.Data, result.Message));
+
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse.FailResult(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.FailResult("An unexpected error occurred."));
+            }
+
         }
     }
 }

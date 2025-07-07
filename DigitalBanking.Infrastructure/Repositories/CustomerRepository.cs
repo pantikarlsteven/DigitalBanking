@@ -1,4 +1,5 @@
-﻿using DigitalBanking.Application.DTOs;
+﻿using DigitalBanking.Application.Common;
+using DigitalBanking.Application.DTOs;
 using DigitalBanking.Application.Interfaces;
 using DigitalBanking.Domain.Entities;
 using DigitalBanking.Infrastructure.Data;
@@ -15,9 +16,9 @@ namespace DigitalBanking.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<CustomerDTO?> FindAsync(Guid id)
+        public async Task<ServiceResult<CustomerDTO>> FindAsync(Guid id)
         {
-            return await _context.Customers
+            var data = await _context.Customers
                .Where(c => c.Id == id)
                .Select(c => new CustomerDTO
                {
@@ -38,10 +39,27 @@ namespace DigitalBanking.Infrastructure.Repositories
                    }).ToList()
                })
                .FirstOrDefaultAsync();
+
+            if (data == null)
+                return ServiceResult<CustomerDTO>.Fail($"Customer with id {id} not found");
+
+            return ServiceResult<CustomerDTO>.Ok(data, "Customer retrieved successfully");
         }
 
-        public async Task AddAsync(CustomerDTO customer)
+        public async Task<ServiceResult<Guid>> AddAsync(AddCustomerDTO customer)
         {
+            if (string.IsNullOrEmpty(customer.FirstName))
+                return ServiceResult<Guid>.Fail("First Name is required");
+
+            if (string.IsNullOrEmpty(customer.LastName))
+                return ServiceResult<Guid>.Fail("Last Name is required");
+
+            if (string.IsNullOrEmpty(customer.Email))
+                return ServiceResult<Guid>.Fail("Email is required");
+
+            if (string.IsNullOrEmpty(customer.Phone))
+                return ServiceResult<Guid>.Fail("Phone is required");
+
             var newCustomer = new Customer
             {
                 Id = Guid.NewGuid(),
@@ -54,44 +72,36 @@ namespace DigitalBanking.Infrastructure.Repositories
 
             _context.Customers.Add(newCustomer);
             await _context.SaveChangesAsync();
+
+            return ServiceResult<Guid>.Ok(newCustomer.Id, "Customer created successfully");
         }
 
-        public async Task<bool> PutAsync(Guid id, CustomerDTO customer)
+        public async Task<ServiceResult<bool>> PutAsync(Guid id, UpdateCustomerInfo customer)
         {
             var customerExists = await _context.Customers.FindAsync(id);
 
             if (customerExists == null)
-            {
-                throw new KeyNotFoundException($"Customer with ID {id} was not found.");
-            }
+                return ServiceResult<bool>.Fail($"Customer with ID {id} was not found.");
+
+            if (string.IsNullOrEmpty(customer.FirstName))
+                return ServiceResult<bool>.Fail("First Name is required");
+
+            if (string.IsNullOrEmpty(customer.LastName))
+                return ServiceResult<bool>.Fail("Last Name is required");
+
+            if (string.IsNullOrEmpty(customer.Email))
+                return ServiceResult<bool>.Fail("Email is required");
+
+            if (string.IsNullOrEmpty(customer.Phone))
+                return ServiceResult<bool>.Fail("Phone is required");
 
             customerExists.FirstName = customer.FirstName;
             customerExists.LastName = customer.LastName;
             customerExists.Email = customer.Email;
             customerExists.Phone = customer.Phone;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CustomerExists(id))
-                {
-                    return false;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-        }
-
-        public bool CustomerExists(Guid id)
-        {
-            return _context.Customers.Any(e => e.Id == id);
+            await _context.SaveChangesAsync();
+            return ServiceResult<bool>.Ok(true, "Customer detail updated successfully");
         }
     }
 }

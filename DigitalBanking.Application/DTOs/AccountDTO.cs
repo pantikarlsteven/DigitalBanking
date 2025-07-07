@@ -14,5 +14,14 @@ namespace DigitalBanking.Application.DTOs
         public string AccountType { get; set; }
         public decimal Balance { get; set; }
         public bool IsActive { get; set; }
+        public List<TransactionDTO>? Transactions { get; set; }
+
+    }
+
+    public class AddAccountDTO
+    {
+        public Guid CustomerId { get; set; }
+        public string AccountType { get; set; }
+        public decimal Balance { get; set; }
     }
 }
