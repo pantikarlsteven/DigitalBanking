@@ -12,6 +12,7 @@ Business Rules Assumptions:
 - Transaction Fee set to 25.
 - Transaction fee is applicable only on transfer.
 - Daily Transaction Limit set to 50,000. 
+- Transaction Status: Failed, Pending & Completed
 
 **BONUS FEATURES INCLUDED**
 - Account statement generation (transactions within date range)
